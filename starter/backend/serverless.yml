@@ -8,6 +8,9 @@ frameworkVersion: '4'
 provider:
   name: aws
   runtime: nodejs20.x
+  tracing:
+    lambda: true
+    apiGateway: true
 
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'us-east-1'}
@@ -17,24 +20,6 @@ provider:
     TODOS_CREATED_AT_INDEX: CreatedAtIndex
     TODOS_S3_BUCKET: todoss-${self:provider.stage}
 
-  iam:
-    role:
-      statements:
-        - Effect: Allow
-          Action:
-            - s3:PutObject
-            - s3:GetObject
-          Resource: arn:aws:s3:::${self:provider.environment.TODOS_S3_BUCKET}/*
-        - Effect: Allow
-          Action:
-            - "xray:PutTraceSegments"
-            - "xray:PutTelemetryRecords"
-          Resource: "*"
-        - Effect: Allow
-          Action:
-            - cloudwatch:PutMetricData
-          Resource: "*"
-
 functions:
 
   Auth:
@@ -42,6 +27,7 @@ functions:
 
   GetTodos:
     handler: src/lambda/http/getTodos.handler
+    tracing: true
     events:
       - http:
           method: get
@@ -66,9 +52,23 @@ functions:
         Action:
           - cloudwatch:PutMetricData
         Resource: "*"
+      - Effect: Allow
+        Action:
+          - s3:GetObject
+        Resource: arn:aws:s3:::${self:provider.environment.TODOS_S3_BUCKET}/*
+      - Effect: Allow
+        Action:
+          - "xray:PutTraceSegments"
+          - "xray:PutTelemetryRecords"
+        Resource: "*"
+      - Effect: Allow
+        Action:
+          - cloudwatch:PutMetricData
+        Resource: "*"
 
   CreateTodo:
     handler: src/lambda/http/createTodo.handler
+    tracing: true
     events:
       - http:
           method: post
@@ -91,9 +91,19 @@ functions:
         Action:
           - cloudwatch:PutMetricData
         Resource: "*"
+      - Effect: Allow
+        Action:
+          - "xray:PutTraceSegments"
+          - "xray:PutTelemetryRecords"
+        Resource: "*"
+      - Effect: Allow
+        Action:
+          - cloudwatch:PutMetricData
+        Resource: "*"
 
   UpdateTodo:
     handler: src/lambda/http/updateTodo.handler
+    tracing: true
     events:
       - http:
           method: patch
@@ -117,9 +127,19 @@ functions:
         Action:
           - cloudwatch:PutMetricData
         Resource: "*"
+      - Effect: Allow
+        Action:
+          - "xray:PutTraceSegments"
+          - "xray:PutTelemetryRecords"
+        Resource: "*"
+      - Effect: Allow
+        Action:
+          - cloudwatch:PutMetricData
+        Resource: "*"
 
   DeleteTodo:
     handler: src/lambda/http/deleteTodo.handler
+    tracing: true
     events:
       - http:
           method: delete
@@ -143,9 +163,19 @@ functions:
         Action:
           - cloudwatch:PutMetricData
         Resource: "*"
+      - Effect: Allow
+        Action:
+          - "xray:PutTraceSegments"
+          - "xray:PutTelemetryRecords"
+        Resource: "*"
+      - Effect: Allow
+        Action:
+          - cloudwatch:PutMetricData
+        Resource: "*"
 
   GenerateUploadUrl:
     handler: src/lambda/http/generateUploadUrl.handler
+    tracing: true
     events:
       - http:
           method: post
@@ -169,7 +199,21 @@ functions:
         Action:
           - cloudwatch:PutMetricData
         Resource: "*"
-        
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+          - s3:GetObject
+        Resource: arn:aws:s3:::${self:provider.environment.TODOS_S3_BUCKET}/*
+      - Effect: Allow
+        Action:
+          - "xray:PutTraceSegments"
+          - "xray:PutTelemetryRecords"
+        Resource: "*"
+      - Effect: Allow
+        Action:
+          - cloudwatch:PutMetricData
+        Resource: "*" 
+
 resources:
   Resources:
     TodosTable:

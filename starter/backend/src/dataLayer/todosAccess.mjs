@@ -3,6 +3,10 @@ import { DynamoDB } from '@aws-sdk/client-dynamodb'
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb'
 import { createLogger } from '../utils/logger.mjs'
 import AWSXRay from 'aws-xray-sdk-core'
+import AWS from 'aws-sdk'
+import Axios from 'axios'
+
+const s3 = new AWS.S3();
 const logger = createLogger('dataLayer.todosAccess')
 
 const dynamoDb = new DynamoDB()
@@ -28,11 +32,23 @@ export class TodosAccess {
         ScanIndexForward: false
       })
 
-    const items = result.Items.map((item) => ({
-      ...item,
-      attachmentUrl: `https://${TODOS_BUCKET}.s3.amazonaws.com/${item.todoId}`,
-    }));
+    //const items = result.Items.map((item) => ({
+    //  ...item,
+    //  attachmentUrl: `https://${TODOS_BUCKET}.s3.amazonaws.com/${item.todoId}`,
+    //}));
 
+    const items = await Promise.all(
+      result.Items.map(async (item) => {
+        const attachmentUrl = `https://${TODOS_BUCKET}.s3.amazonaws.com/${item.todoId}`;
+        const exists = await checkImageExists(attachmentUrl);
+        console.log(exists)
+        return {
+          ...item,
+          attachmentUrl: exists ? attachmentUrl : null, // Gán null nếu không tồn tại
+        };
+      })
+    );
+    
     logger.info(`Fetched ${items.length} TODOs for user ${userId}`)
     return items;
   }
@@ -124,4 +140,18 @@ export class TodosAccess {
 
     return result.Item
   }
+
 }
+
+export async function checkImageExists(url) {
+  try {
+    console.log(url);
+    const response = await Axios.head(url);
+    return response.status === 200;
+  } catch (e) {
+    console.log(e);
+    return false;
+  }
+}
+
+
